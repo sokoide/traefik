@@ -35,6 +35,7 @@ type Service struct {
 	LoadBalancer *ServersLoadBalancer `json:"loadBalancer,omitempty" toml:"loadBalancer,omitempty" yaml:"loadBalancer,omitempty" export:"true"`
 	Weighted     *WeightedRoundRobin  `json:"weighted,omitempty" toml:"weighted,omitempty" yaml:"weighted,omitempty" label:"-" export:"true"`
 	Mirroring    *Mirroring           `json:"mirroring,omitempty" toml:"mirroring,omitempty" yaml:"mirroring,omitempty" label:"-" export:"true"`
+	SpnegoOut    *SpnegoOutService    `json:"spnegoOut,omitempty" toml:"spnegoOut,omitempty" yaml:"spnegoOut,omitempty" export:"true"`
 }
 
 // +k8s:deepcopy-gen=true
@@ -118,6 +119,30 @@ type Cookie struct {
 	Secure   bool   `json:"secure,omitempty" toml:"secure,omitempty" yaml:"secure,omitempty" export:"true"`
 	HTTPOnly bool   `json:"httpOnly,omitempty" toml:"httpOnly,omitempty" yaml:"httpOnly,omitempty" export:"true"`
 	SameSite string `json:"sameSite,omitempty" toml:"sameSite,omitempty" yaml:"sameSite,omitempty" export:"true"`
+}
+
+// +k8s:deepcopy-gen=true
+
+// SpnegoOutService enables SPNEGO in outgoing requests to access Kerberos protected sites
+type SpnegoOutService struct {
+	Scheme             string              `json:"scheme,omitempty" toml:"scheme,omitempty" yaml:"scheme,omitempty" export:"true"`
+	Realm              string              `json:"realm,omitempty" toml:"realm,omitempty" yaml:"realm,omitempty" export:"true"`
+	TargetHostSegment  int                 `json:"targetHostSegment,omitempty" toml:"targetHostSegment,omitempty" yaml:"targetHostSegment,omitempty" export:"true"`
+	KrbConfPath        string              `json:"krbConfPath,omitempty" toml:"krbConfPath,omitempty" yaml:"krbConfPath,omitempty" export:"true"`
+	KeytabPath         string              `json:"keytabPath,omitempty" toml:"keytabPath,omitempty" yaml:"keytabPath,omitempty" export:"true"`
+	CcachePath         string              `json:"ccachePath,omitempty" toml:"ccachePath,omitempty" yaml:"ccachePath,omitempty" export:"true"`
+	SpnOverrides       []SpnMapping        `json:"spnOverrides,omitempty" toml:"spnOverrides,omitempty" yaml:"spnOverrides,omitempty" export:"true"`
+	PassHostHeader     *bool               `json:"passHostHeader" toml:"passHostHeader" yaml:"passHostHeader" export:"true"`
+	ResponseForwarding *ResponseForwarding `json:"responseForwarding,omitempty" toml:"responseForwarding,omitempty" yaml:"responseForwarding,omitempty" export:"true"`
+	ServersTransport   string              `json:"serversTransport,omitempty" toml:"serversTransport,omitempty" yaml:"serversTransport,omitempty" export:"true"`
+}
+
+// +k8s:deepcopy-gen=true
+
+// SpnMapping maps domain name and SPN. If this is not specified, HTTP/domain-name per site is used by default.
+type SpnMapping struct {
+	Spn        string `json:"spn,omitempty" toml:"spn,omitempty" yaml:"spn,omitempty" export:"true"`
+	DomainName string `json:"domainName,omitempty" toml:"domainName,omitempty" yaml:"domainName,omitempty" export:"true"`
 }
 
 // +k8s:deepcopy-gen=true

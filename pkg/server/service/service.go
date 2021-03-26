@@ -25,6 +25,7 @@ import (
 	"github.com/traefik/traefik/v2/pkg/server/provider"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/mirror"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/wrr"
+	"github.com/traefik/traefik/v2/pkg/server/service/spnegoout"
 	"github.com/vulcand/oxy/roundrobin"
 )
 
@@ -115,6 +116,13 @@ func (m *Manager) BuildHTTP(rootCtx context.Context, serviceName string) (http.H
 			conf.AddError(err, true)
 			return nil, err
 		}
+	case conf.SpnegoOut != nil:
+		var err error
+		lb, err = m.getSpnegoOutServiceHandler(ctx, serviceName, conf.SpnegoOut)
+		if err != nil {
+			conf.AddError(err, true)
+			return nil, err
+		}
 	default:
 		sErr := fmt.Errorf("the service %q does not have any type defined", serviceName)
 		conf.AddError(sErr, true)
@@ -147,6 +155,42 @@ func (m *Manager) getMirrorServiceHandler(ctx context.Context, config *dynamic.M
 		}
 	}
 	return handler, nil
+}
+
+func (m *Manager) getSpnegoOutServiceHandler(ctx context.Context, serviceName string, service *dynamic.SpnegoOutService) (http.Handler, error) {
+	if service.PassHostHeader == nil {
+		defaultPassHostHeader := true
+		service.PassHostHeader = &defaultPassHostHeader
+	}
+
+	if len(service.ServersTransport) > 0 {
+		service.ServersTransport = provider.GetQualifiedName(ctx, service.ServersTransport)
+	}
+
+	roundTripper, err := m.roundTripperManager.Get(service.ServersTransport)
+	if err != nil {
+		return nil, err
+	}
+
+	fwd, err := buildProxy(service.PassHostHeader, service.ResponseForwarding, roundTripper, m.bufferPool)
+	if err != nil {
+		return nil, err
+	}
+
+	alHandler := func(next http.Handler) (http.Handler, error) {
+		return accesslog.NewFieldHandler(next, accesslog.ServiceName, serviceName, accesslog.AddServiceFields), nil
+	}
+	chain := alice.New()
+	if m.metricsRegistry != nil && m.metricsRegistry.IsSvcEnabled() {
+		chain = chain.Append(metricsMiddle.WrapServiceHandler(ctx, m.metricsRegistry, serviceName))
+	}
+
+	handler, err := chain.Append(alHandler).Then(pipelining.New(ctx, fwd, "pipelining"))
+	if err != nil {
+		return nil, err
+	}
+
+	return spnegoout.New(ctx, handler, service, serviceName)
 }
 
 func (m *Manager) getWRRServiceHandler(ctx context.Context, serviceName string, config *dynamic.WeightedRoundRobin) (http.Handler, error) {
