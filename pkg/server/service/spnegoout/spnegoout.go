@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/containous/alice"
 	"github.com/jcmturner/gokrb5/v8/client"
@@ -47,7 +46,6 @@ func New(ctx context.Context, next http.Handler, service *dynamic.SpnegoOutServi
 		spnOverrides: spnOverrides,
 	}
 
-	err = spnego.refreshTicket(logger)
 	return spnego, err
 }
 
@@ -55,46 +53,20 @@ func (s *SpnegoOut) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	logger := log.FromContext(req.Context())
 	spn := ""
 
-	path := req.URL.Path
-	if len(path) > 0 && path[0] != '/' {
-		path = "/" + path
-	}
-	comps := strings.Split(req.URL.Path, "/")
-
-	if len(s.config.Scheme) > 0 {
-		req.URL.Scheme = s.config.Scheme
-	} else {
-		req.URL.Scheme = "HTTP"
-	}
-
-	// TargetHostSegment is an index of segments when you split URL by '/'.
-	// 1st segment is 1.
-	// if router's rule is "PathPrefix(`/spnegohttp/`)" and
-	// you have a target domain name in the following segment,
-	// TargetHostSegment should be set to 2.
-	// when you make a request to http://traefikhost:port/spnegohttp/foo.com:12345/a/b/c,
-	// it'll redirect the traffic to foo.com:12345 with URL Path = /a/b/c
-	// If spnegoOut is defined in loadBalancer service, taergetHostSegment should be 0
-	// to skip target host name override.
-	if s.config.TargetHostSegment > 0 {
-		req.URL.Host = comps[s.config.TargetHostSegment]
-		req.URL.Path = "/" + strings.Join(comps[s.config.TargetHostSegment+1:], "/")
-	}
-	req.Host = req.URL.Host
-	req.RequestURI = req.URL.Path
-
-	if value, ok := s.spnOverrides[req.Host]; ok {
+	if value, ok := s.spnOverrides[req.URL.Host]; ok {
 		spn = value
 	}
 
 	// SetSPNEGOHeader fails if the ticket is expired
 	// call refreshTicket() only once if when it fails
 	for i := 0; i < 2; i++ {
-		err := spnego.SetSPNEGOHeader(s.client, req, spn)
-		if err == nil {
-			break
+		if s.client != nil {
+			err := spnego.SetSPNEGOHeader(s.client, req, spn)
+			if err == nil {
+				break
+			}
+			logger.Warnf("Error setting SPNEGO Header. Refreshing ticket. err: %+v", err)
 		}
-		logger.Warnf("Error setting SPNEGO Header. Refreshing ticket. err: %+v", err)
 		s.refreshTicket(logger)
 	}
 

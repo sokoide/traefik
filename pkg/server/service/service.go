@@ -25,6 +25,7 @@ import (
 	"github.com/traefik/traefik/v2/pkg/server/provider"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/mirror"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/wrr"
+	"github.com/traefik/traefik/v2/pkg/server/service/reroute"
 	"github.com/traefik/traefik/v2/pkg/server/service/spnegoout"
 	"github.com/vulcand/oxy/roundrobin"
 )
@@ -116,9 +117,9 @@ func (m *Manager) BuildHTTP(rootCtx context.Context, serviceName string) (http.H
 			conf.AddError(err, true)
 			return nil, err
 		}
-	case conf.SpnegoOut != nil:
+	case conf.Reroute != nil:
 		var err error
-		lb, err = m.getSpnegoOutServiceHandler(ctx, serviceName, conf.SpnegoOut)
+		lb, err = m.getRerouteServiceHandler(ctx, serviceName, conf.Reroute)
 		if err != nil {
 			conf.AddError(err, true)
 			return nil, err
@@ -157,7 +158,7 @@ func (m *Manager) getMirrorServiceHandler(ctx context.Context, config *dynamic.M
 	return handler, nil
 }
 
-func (m *Manager) getSpnegoOutServiceHandler(ctx context.Context, serviceName string, service *dynamic.SpnegoOutService) (http.Handler, error) {
+func (m *Manager) getRerouteServiceHandler(ctx context.Context, serviceName string, service *dynamic.RerouteService) (http.Handler, error) {
 	if service.PassHostHeader == nil {
 		defaultPassHostHeader := true
 		service.PassHostHeader = &defaultPassHostHeader
@@ -185,12 +186,16 @@ func (m *Manager) getSpnegoOutServiceHandler(ctx context.Context, serviceName st
 		chain = chain.Append(metricsMiddle.WrapServiceHandler(ctx, m.metricsRegistry, serviceName))
 	}
 
+	if service.SpnegoOut != nil {
+		chain = chain.Append(spnegoout.WrapServiceHandler(ctx, service.SpnegoOut, serviceName))
+	}
+
 	handler, err := chain.Append(alHandler).Then(pipelining.New(ctx, fwd, "pipelining"))
 	if err != nil {
 		return nil, err
 	}
 
-	return spnegoout.New(ctx, handler, service, serviceName)
+	return reroute.New(ctx, handler, service, serviceName)
 }
 
 func (m *Manager) getWRRServiceHandler(ctx context.Context, serviceName string, config *dynamic.WeightedRoundRobin) (http.Handler, error) {

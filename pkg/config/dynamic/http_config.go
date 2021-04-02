@@ -35,7 +35,7 @@ type Service struct {
 	LoadBalancer *ServersLoadBalancer `json:"loadBalancer,omitempty" toml:"loadBalancer,omitempty" yaml:"loadBalancer,omitempty" export:"true"`
 	Weighted     *WeightedRoundRobin  `json:"weighted,omitempty" toml:"weighted,omitempty" yaml:"weighted,omitempty" label:"-" export:"true"`
 	Mirroring    *Mirroring           `json:"mirroring,omitempty" toml:"mirroring,omitempty" yaml:"mirroring,omitempty" label:"-" export:"true"`
-	SpnegoOut    *SpnegoOutService    `json:"spnegoOut,omitempty" toml:"spnegoOut,omitempty" yaml:"spnegoOut,omitempty" export:"true"`
+	Reroute      *RerouteService      `json:"reroute,omitempty" toml:"retoute,omitempty" yaml:"reroute,omitempty" export:"true"`
 }
 
 // +k8s:deepcopy-gen=true
@@ -123,12 +123,23 @@ type Cookie struct {
 
 // +k8s:deepcopy-gen=true
 
+// RerouteService reroutes outgoing requests using URL segments of incoming requets
+type RerouteService struct {
+	Scheme             string              `json:"scheme,omitempty" toml:"scheme,omitempty" yaml:"scheme,omitempty" export:"true"`
+	TargetHostSegment  int                 `json:"targetHostSegment,omitempty" toml:"targetHostSegment,omitempty" yaml:"targetHostSegment,omitempty" export:"true"`
+	HealthCheck        *HealthCheck        `json:"healthCheck,omitempty" toml:"healthCheck,omitempty" yaml:"healthCheck,omitempty" export:"true"`
+	PassHostHeader     *bool               `json:"passHostHeader" toml:"passHostHeader" yaml:"passHostHeader" export:"true"`
+	ResponseForwarding *ResponseForwarding `json:"responseForwarding,omitempty" toml:"responseForwarding,omitempty" yaml:"responseForwarding,omitempty" export:"true"`
+	ServersTransport   string              `json:"serversTransport,omitempty" toml:"serversTransport,omitempty" yaml:"serversTransport,omitempty" export:"true"`
+	SpnegoOut          *SpnegoOutService   `json:"spnegoOut,omitempty" toml:"spnegoOut,omitempty" yaml:"spnegoOut,omitempty" export:"true"`
+}
+
+// +k8s:deepcopy-gen=true
+
 // SpnegoOutService enables SPNEGO in outgoing requests to access Kerberos protected sites
 type SpnegoOutService struct {
-	Scheme             string              `json:"scheme,omitempty" toml:"scheme,omitempty" yaml:"scheme,omitempty" export:"true"`
 	User               string              `json:"user,omitempty" toml:"user,omitempty" yaml:"user,omitempty" export:"true"`
 	Realm              string              `json:"realm,omitempty" toml:"realm,omitempty" yaml:"realm,omitempty" export:"true"`
-	TargetHostSegment  int                 `json:"targetHostSegment,omitempty" toml:"targetHostSegment,omitempty" yaml:"targetHostSegment,omitempty" export:"true"`
 	KrbConfPath        string              `json:"krbConfPath,omitempty" toml:"krbConfPath,omitempty" yaml:"krbConfPath,omitempty" export:"true"`
 	KeytabPath         string              `json:"keytabPath,omitempty" toml:"keytabPath,omitempty" yaml:"keytabPath,omitempty" export:"true"`
 	CcachePath         string              `json:"ccachePath,omitempty" toml:"ccachePath,omitempty" yaml:"ccachePath,omitempty" export:"true"`
