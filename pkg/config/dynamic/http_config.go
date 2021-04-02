@@ -126,6 +126,7 @@ type Cookie struct {
 // SpnegoOutService enables SPNEGO in outgoing requests to access Kerberos protected sites
 type SpnegoOutService struct {
 	Scheme             string              `json:"scheme,omitempty" toml:"scheme,omitempty" yaml:"scheme,omitempty" export:"true"`
+	User               string              `json:"user,omitempty" toml:"user,omitempty" yaml:"user,omitempty" export:"true"`
 	Realm              string              `json:"realm,omitempty" toml:"realm,omitempty" yaml:"realm,omitempty" export:"true"`
 	TargetHostSegment  int                 `json:"targetHostSegment,omitempty" toml:"targetHostSegment,omitempty" yaml:"targetHostSegment,omitempty" export:"true"`
 	KrbConfPath        string              `json:"krbConfPath,omitempty" toml:"krbConfPath,omitempty" yaml:"krbConfPath,omitempty" export:"true"`

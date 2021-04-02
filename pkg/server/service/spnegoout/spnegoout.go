@@ -3,7 +3,6 @@ package spnegoout
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -124,8 +123,14 @@ func (s *SpnegoOut) refreshTicket(logger log.Logger) error {
 
 	if s.config.KeytabPath != "" {
 		logger.Debugf("Using Keytab %s", s.config.KeytabPath)
-		user := fmt.Sprintf("%s/%s", os.Getenv("USER"), os.Getenv("HOSTNAME"))
+		user := s.config.User
+		if user == "" {
+			user = os.Getenv("USER")
+		}
 		realm := s.config.Realm
+		if realm == "" {
+			realm = c.LibDefaults.DefaultRealm
+		}
 		kt, err = keytab.Load(s.config.KeytabPath)
 		if err != nil {
 			return err
