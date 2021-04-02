@@ -239,6 +239,10 @@ func (m *Manager) getLoadBalancerServiceHandler(ctx context.Context, serviceName
 		chain = chain.Append(metricsMiddle.WrapServiceHandler(ctx, m.metricsRegistry, serviceName))
 	}
 
+	if service.SpnegoOut != nil {
+		chain = chain.Append(spnegoout.WrapServiceHandler(ctx, service.SpnegoOut, serviceName))
+	}
+
 	handler, err := chain.Append(alHandler).Then(pipelining.New(ctx, fwd, "pipelining"))
 	if err != nil {
 		return nil, err

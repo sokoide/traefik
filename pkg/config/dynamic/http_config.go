@@ -156,6 +156,7 @@ type ServersLoadBalancer struct {
 	PassHostHeader     *bool               `json:"passHostHeader" toml:"passHostHeader" yaml:"passHostHeader" export:"true"`
 	ResponseForwarding *ResponseForwarding `json:"responseForwarding,omitempty" toml:"responseForwarding,omitempty" yaml:"responseForwarding,omitempty" export:"true"`
 	ServersTransport   string              `json:"serversTransport,omitempty" toml:"serversTransport,omitempty" yaml:"serversTransport,omitempty" export:"true"`
+	SpnegoOut          *SpnegoOutService   `json:"spnegoOut,omitempty" toml:"spnegoOut,omitempty" yaml:"spnegoOut,omitempty" export:"true"`
 }
 
 // Mergeable tells if the given service is mergeable.
