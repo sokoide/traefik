@@ -20,13 +20,13 @@ import (
 	"github.com/traefik/traefik/v2/pkg/middlewares/emptybackendhandler"
 	metricsMiddle "github.com/traefik/traefik/v2/pkg/middlewares/metrics"
 	"github.com/traefik/traefik/v2/pkg/middlewares/pipelining"
+	"github.com/traefik/traefik/v2/pkg/middlewares/spnegoout"
 	"github.com/traefik/traefik/v2/pkg/safe"
 	"github.com/traefik/traefik/v2/pkg/server/cookie"
 	"github.com/traefik/traefik/v2/pkg/server/provider"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/mirror"
 	"github.com/traefik/traefik/v2/pkg/server/service/loadbalancer/wrr"
 	"github.com/traefik/traefik/v2/pkg/server/service/reroute"
-	"github.com/traefik/traefik/v2/pkg/server/service/spnegoout"
 	"github.com/vulcand/oxy/roundrobin"
 )
 
