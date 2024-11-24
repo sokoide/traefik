@@ -35,6 +35,7 @@ import (
 	"github.com/traefik/traefik/v3/pkg/middlewares/replacepath"
 	"github.com/traefik/traefik/v3/pkg/middlewares/replacepathregex"
 	"github.com/traefik/traefik/v3/pkg/middlewares/retry"
+	"github.com/traefik/traefik/v3/pkg/middlewares/sokoide"
 	"github.com/traefik/traefik/v3/pkg/middlewares/stripprefix"
 	"github.com/traefik/traefik/v3/pkg/middlewares/stripprefixregex"
 	"github.com/traefik/traefik/v3/pkg/server/provider"
@@ -363,6 +364,16 @@ func (b *Builder) buildConstructor(ctx context.Context, middlewareName string) (
 		}
 		middleware = func(next http.Handler) (http.Handler, error) {
 			return stripprefixregex.New(ctx, next, *config.StripPrefixRegex, middlewareName)
+		}
+	}
+
+	// Sokoide
+	if config.Sokoide != nil {
+		if middleware != nil {
+			return nil, badConf
+		}
+		middleware = func(next http.Handler) (http.Handler, error) {
+			return sokoide.New(ctx, next, *config.Sokoide, middlewareName)
 		}
 	}
 
